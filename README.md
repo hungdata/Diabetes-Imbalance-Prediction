@@ -37,4 +37,4 @@ To evaluate a specific resampling method, simply run the corresponding script. F
 python method_enn.py
 ```
 
-*Note: The original paper (`APWEB_2026_Diabetes_Prediction.pdf`) will be uploaded to this repository soon.*
+*Note: My paper (`APWEB_2026_Diabetes_Prediction.pdf`) will be uploaded to this repository soon.*

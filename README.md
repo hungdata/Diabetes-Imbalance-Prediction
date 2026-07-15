@@ -1,87 +1,202 @@
-# 🩺 Imbalanced Diabetes Prediction: Resampling Effects on Decision Boundaries
+# Understanding Resampling Effects on Decision Boundaries for Imbalanced Diabetes Prediction
 
-![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
-![Scikit-Learn](https://img.shields.io/badge/scikit--learn-1.0%2B-F7931E.svg)
-![Imbalanced-Learn](https://img.shields.io/badge/imbalanced--learn-0.9%2B-green.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+**Authors**: Duong Tan Hung, Le Nguyen Trung Dung, Bui Huu Quoc Ngoc, Luong Vuong Nguyen  
+**Institute**: Faculty of Artificial Intelligence, FPT University, Danang, Vietnam
 
-> **"Understanding Resampling Effects on Decision Boundaries for Imbalanced Diabetes Prediction"**  
-> *A systematic study on how different class imbalance handling techniques influence predictive performance in medical screening.*
+---
 
-## 📌 The Medical Challenge: Class Imbalance & Overlap
-In medical machine learning, specifically for diabetes screening, datasets are often heavily skewed. Non-diabetic cases dominate the data, while actual diabetic cases represent a small minority (e.g., 13.9% in our dataset). 
+## 📖 Abstract
 
-**The consequence:** A standard learning algorithm will become biased toward the majority class. It might achieve **deceptively high overall accuracy** (>86%) by simply predicting "Non-diabetic" most of the time, yet fail critically by missing a substantial number of true diabetic cases (**low recall**). In a clinical screening setting, false negatives (missing a disease) are far more costly than a modest reduction in overall accuracy.
+Class imbalance poses a significant challenge in medical machine learning, as models trained on skewed data may achieve high accuracy while failing to detect clinically important minority cases. This issue is particularly critical in diabetes screening, where the diabetic class is both underrepresented and clinically consequential. Additionally, survey-based health data introduces class overlap, making the decision boundary difficult to learn. 
 
-This project empirically investigates whether predictive improvement is driven by **increasing minority-class samples** (Oversampling) or by **reducing boundary ambiguity and class overlap** (Undersampling/Boundary Cleaning).
+This study examines whether improved performance in imbalanced diabetes prediction is driven by increasing minority-class samples or by reducing boundary ambiguity. Using the BRFSS Diabetes Health Indicators dataset, we develop a leakage-aware pipeline with stratified splitting, training-only preprocessing, BMI outlier capping (IQR), feature scaling, resampling optimization, model training, and held-out evaluation. We compare oversampling (SMOTE, ADASYN), undersampling (ENN, Tomek Links, One-Sided Selection), and hybrid methods (SMOTEENN, ADASYN+ENN, ADASYN+Tomek). 
 
-## 📊 Dataset
-We use the **BRFSS (Behavioral Risk Factor Surveillance System) Diabetes Health Indicators dataset**.
-*   **Target:** `Diabetes_binary`
-*   **Imbalance Ratio:** ~86.1% Non-diabetic vs ~13.9% Diabetic.
-*   **Key Features:** BMI, High Blood Pressure, High Cholesterol, Smoking behavior, Physical Activity, Age, General Health, etc.
+Results show that **ENN** with Gradient Boosting and CatBoost achieves the best F1-score (0.466), while **ADASYN+ENN** yields the highest recall (0.833). Overall, boundary-refinement methods provide a superior balance between precision and recall, whereas adaptive oversampling improves sensitivity at the cost of increased false positives.
 
-## 🚀 Implemented Resampling Strategies
-To isolate the effect of imbalance handling from model tuning, we implement and compare several dedicated resampling strategies under a rigorous, leakage-aware pipeline:
-
-1. **Oversampling (Minority Expansion):**
-   * `SMOTE`: Synthetic Minority Over-sampling Technique.
-   * `ADASYN`: Adaptive Synthetic Sampling (focuses specifically on difficult-to-learn minority regions).
-2. **Undersampling (Boundary Cleaning):**
-   * `ENN`: Edited Nearest Neighbors (strong boundary cleaning mechanism).
-   * `Tomek Links`: Reduces direct class overlap along the decision boundary.
-   * `One-Sided Selection (OSS)`: Combines Tomek Links & condensed nearest neighbors.
-3. **Hybrid Methods (Expansion + Cleaning):**
-   * `SMOTEENN`: Applies SMOTE followed by ENN.
-   * `ADASYN+ENN`: Applies ADASYN followed by ENN.
-   * `ADASYN+Tomek`: Applies ADASYN followed by Tomek Links.
-
-## 🏆 Highlight Results
-Below is a comparison of how different methods impact the performance of a **Gradient Boosting Classifier** on the held-out test set. Notice how relying on accuracy alone is dangerously misleading.
-
-| Resampling Method | Accuracy | Precision | Recall (Sensitivity) | F1-Score | Mechanism Highlight |
-|:---|:---:|:---:|:---:|:---:|:---|
-| **Original (Baseline)** | 86.5% | 54.8% | **16.9%** | 0.258 | Heavily biased toward majority class |
-| **SMOTE** | 82.3% | 39.8% | 52.2% | 0.451 | Expands minority coverage |
-| **ENN (Best F1)** | 79.6% | 36.7% | 64.0% | **0.466** | Cleans ambiguous boundary samples |
-| **ADASYN+ENN (Max Recall)**| 75.3% | 32.7% | **72.7%** | 0.451 | Aggressively targets difficult minority cases |
-
-*(Note: Applying Logistic Regression with ADASYN+ENN pushes Recall even higher to an astonishing **83.0%**, up from the baseline 17.1%)*
-
-### 💡 Key Findings
-*   **The Baseline Trap:** Without resampling, models reach high accuracy (86.5%) but catch only **~17%** of diabetic patients. They fail their medical purpose.
-*   **Quality over Quantity:** **ENN** achieves the best overall balance (F1-Score: 0.466) simply by removing ambiguous majority samples near the boundary, proving that *class overlap* is as critical an issue as class imbalance.
-*   **Maximum Sensitivity:** If minimizing false negatives is the absolute priority, adaptive oversampling followed by cleaning (**ADASYN+ENN**) provides the most aggressive minority-case detection, though at the cost of more false positives (lower precision).
+---
 
 ## 📂 Repository Structure
-Our pipeline is designed to be **leakage-aware**. All preprocessing (BMI Outlier Capping via IQR, Standard Scaling, and Resampling itself) is strictly fitted on the training split only.
 
-```bash
+The repository code is organized based on the resampling strategies used:
+
+```text
 .
-├── README.md                  # This comprehensive documentation
-├── utils.py                   # Core pipeline utilities (data loading, preprocessing, cross-validation)
-├── method_smote.py            # Execution script for SMOTE
-├── method_adasyn.py           # Execution script for ADASYN
-├── method_enn.py              # Execution script for ENN
-├── method_tomek.py            # Execution script for Tomek Links
-├── method_oss.py              # Execution script for One-Sided Selection
-├── method_smote_enn.py        # Execution script for SMOTEENN
-├── method_adasyn_enn.py       # Execution script for ADASYN+ENN
-└── method_adasyn_tomek.py     # Execution script for ADASYN+Tomek
+├── upsampling/
+│   ├── method_smote.py
+│   └── method_adasyn.py
+├── downsampling/
+│   ├── method_enn.py
+│   ├── method_tomek.py
+│   └── method_oss.py
+├── hybrid_sampling/
+│   ├── method_smote_enn.py
+│   ├── method_adasyn_enn.py
+│   └── method_adasyn_tomek.py
+├── utils.py
+├── class_distribution.png
+├── original_imbalance_boundary.png
+└── README.md
 ```
 
-## 💻 How to Run
+---
 
-**1. Clone the repository and install dependencies:**
-Ensure you have `scikit-learn`, `imbalanced-learn`, and `pandas` installed.
+## 📊 Exploratory Data Analysis
 
-**2. Execute a specific pipeline:**
-To reproduce the results for a specific resampling strategy, simply execute the corresponding Python script. For example, to test the best-performing **ENN** method:
-```bash
-python method_enn.py
-```
-This will automatically:
-1. Load and stratify-split the BRFSS dataset.
-2. Apply IQR capping and scaling strictly on the training set.
-3. Apply ENN to clean the boundary.
-4. Train baseline classifiers and output detailed evaluation metrics (Precision, Recall, F1).
+### Class Distribution Analysis
+The target distribution confirms a strong imbalance, with non-diabetic cases forming the majority class and diabetic cases forming the minority class.
+
+![Class Distribution](class_distribution.png)
+*Figure 1: Class distribution of the target variable. The diabetic class represents only a small proportion of the dataset.*
+
+### Why Imbalance Becomes a Medical Problem
+The effect of imbalance can be illustrated through the decision boundary learned from the original data.
+
+![Decision Boundary](original_imbalance_boundary.png)
+*Figure 2: Illustration of logistic regression trained on the original imbalanced data. The decision boundary is biased toward the majority class, causing many minority diabetic cases to fall on the wrong side of the boundary.*
+
+---
+
+## 🏆 Results on the Held-out Test Set
+
+Because the dataset is imbalanced, we emphasize **Recall** and **F1-score** over raw Accuracy.
+
+### 1. Performance on Original Imbalanced Data (Baseline)
+Without resampling, several models retain high accuracy but low recall. This indicates a strong bias toward the majority class.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.865 | 0.548 | 0.169 | 0.258 |
+| Logistic Regression | 0.863 | 0.525 | 0.171 | 0.258 |
+| Decision Tree | 0.800 | 0.295 | 0.316 | 0.305 |
+| Random Forest | 0.854 | 0.447 | 0.192 | 0.268 |
+| Gaussian NB | 0.776 | 0.326 | 0.568 | 0.414 |
+| CatBoost | 0.864 | 0.542 | 0.167 | 0.255 |
+| Linear Discriminant Analysis | 0.861 | 0.502 | 0.208 | 0.294 |
+| Linear SVM | 0.864 | 0.588 | 0.078 | 0.138 |
+
+### 2. Upsampling (Oversampling)
+
+#### Performance with SMOTE
+SMOTE improves recall by increasing minority coverage.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.823 | 0.398 | 0.522 | 0.451 |
+| Logistic Regression | 0.798 | 0.367 | 0.617 | 0.460 |
+| Decision Tree | 0.800 | 0.306 | 0.340 | 0.322 |
+| Random Forest | 0.845 | 0.420 | 0.286 | 0.340 |
+| Gaussian NB | 0.745 | 0.310 | 0.675 | 0.425 |
+| CatBoost | 0.863 | 0.528 | 0.183 | 0.272 |
+| Linear Discriminant Analysis | 0.795 | 0.364 | 0.626 | 0.460 |
+| Linear SVM | 0.797 | 0.366 | 0.622 | 0.461 |
+
+#### Performance with ADASYN
+ADASYN improves recall by allocating more synthetic samples to difficult minority regions.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.819 | 0.390 | 0.528 | 0.449 |
+| Logistic Regression | 0.794 | 0.363 | 0.628 | 0.460 |
+| Decision Tree | 0.798 | 0.294 | 0.319 | 0.306 |
+| Random Forest | 0.848 | 0.426 | 0.269 | 0.330 |
+| Gaussian NB | 0.740 | 0.306 | 0.686 | 0.424 |
+| CatBoost | 0.863 | 0.524 | 0.176 | 0.263 |
+| Linear Discriminant Analysis | 0.792 | 0.361 | 0.640 | 0.461 |
+| Linear SVM | 0.794 | 0.362 | 0.632 | 0.460 |
+
+### 3. Downsampling (Undersampling)
+
+#### Performance with ENN (Best F1-Score 🏆)
+ENN improves recall through a different mechanism: it removes ambiguous local samples that make the boundary difficult to learn. **This leads to the best overall F1-score.**
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.796 | 0.367 | 0.640 | **0.466** |
+| Logistic Regression | 0.794 | 0.363 | 0.632 | 0.461 |
+| Decision Tree | 0.702 | 0.275 | 0.698 | 0.395 |
+| Random Forest | 0.768 | 0.332 | 0.661 | 0.442 |
+| Gaussian NB | 0.768 | 0.318 | 0.580 | 0.411 |
+| CatBoost | 0.793 | 0.364 | 0.648 | **0.466** |
+| Linear Discriminant Analysis | 0.790 | 0.356 | 0.623 | 0.453 |
+| Linear SVM | 0.797 | 0.365 | 0.619 | 0.459 |
+
+#### Performance with Tomek Links
+Tomek Links provide only moderate improvement. They reduce some local overlap, but the cleaning effect is weaker than that of ENN.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.862 | 0.510 | 0.240 | 0.326 |
+| Logistic Regression | 0.861 | 0.503 | 0.232 | 0.317 |
+| Decision Tree | 0.796 | 0.305 | 0.363 | 0.331 |
+| Random Forest | 0.852 | 0.444 | 0.263 | 0.330 |
+| Gaussian NB | 0.770 | 0.320 | 0.579 | 0.412 |
+| CatBoost | 0.862 | 0.508 | 0.241 | 0.327 |
+| Linear Discriminant Analysis | 0.856 | 0.472 | 0.269 | 0.343 |
+| Linear SVM | 0.864 | 0.542 | 0.151 | 0.236 |
+
+#### Performance with One-Sided Selection
+OSS changes recall only slightly because it mainly removes redundant majority samples rather than strongly reshaping the minority region.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.862 | 0.511 | 0.239 | 0.326 |
+| Logistic Regression | 0.861 | 0.503 | 0.231 | 0.317 |
+| Decision Tree | 0.797 | 0.307 | 0.363 | 0.333 |
+| Random Forest | 0.850 | 0.438 | 0.259 | 0.326 |
+| Gaussian NB | 0.770 | 0.320 | 0.579 | 0.412 |
+| CatBoost | 0.861 | 0.503 | 0.235 | 0.321 |
+| Linear Discriminant Analysis | 0.856 | 0.473 | 0.269 | 0.343 |
+| Linear SVM | 0.864 | 0.542 | 0.151 | 0.236 |
+
+### 4. Hybrid Sampling
+
+#### Performance with SMOTEENN
+SMOTEENN combines minority expansion with subsequent boundary cleaning, producing a strong balance between recall and F1-score.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.803 | 0.373 | 0.610 | 0.463 |
+| Logistic Regression | 0.745 | 0.321 | 0.745 | 0.448 |
+| Decision Tree | 0.706 | 0.277 | 0.686 | 0.394 |
+| Random Forest | 0.792 | 0.352 | 0.591 | 0.442 |
+| Gaussian NB | 0.730 | 0.298 | 0.692 | 0.416 |
+| CatBoost | 0.810 | 0.382 | 0.586 | 0.463 |
+| Linear Discriminant Analysis | 0.740 | 0.317 | 0.749 | 0.445 |
+| Linear SVM | 0.744 | 0.320 | 0.746 | 0.448 |
+
+#### Performance with ADASYN+ENN (Highest Recall 🏆)
+ADASYN+ENN yields the highest recall because it first reinforces difficult minority regions and then cleans the resulting boundary. However, this comes with lower precision.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.753 | 0.327 | 0.727 | 0.451 |
+| Logistic Regression | 0.689 | 0.287 | 0.830 | 0.427 |
+| Decision Tree | 0.706 | 0.275 | 0.678 | 0.391 |
+| Random Forest | 0.770 | 0.332 | 0.641 | 0.437 |
+| Gaussian NB | 0.711 | 0.287 | 0.726 | 0.412 |
+| CatBoost | 0.804 | 0.374 | 0.609 | 0.464 |
+| Linear Discriminant Analysis | 0.684 | 0.283 | **0.831** | 0.423 |
+| Linear SVM | 0.687 | 0.286 | **0.833** | 0.426 |
+
+#### Performance with ADASYN+Tomek
+ADASYN+Tomek improves recall more than Tomek Links alone, but still remains below the strongest ENN-based approaches in balanced performance.
+
+| Model | Accuracy | Precision | Recall | F1-score |
+| :--- | :---: | :---: | :---: | :---: |
+| Gradient Boosting | 0.830 | 0.407 | 0.486 | 0.443 |
+| Logistic Regression | 0.787 | 0.355 | 0.647 | 0.459 |
+| Decision Tree | 0.796 | 0.294 | 0.331 | 0.311 |
+| Random Forest | 0.845 | 0.416 | 0.281 | 0.336 |
+| Gaussian NB | 0.738 | 0.305 | 0.690 | 0.423 |
+| CatBoost | 0.864 | 0.536 | 0.185 | 0.276 |
+| Linear Discriminant Analysis | 0.784 | 0.353 | 0.655 | 0.458 |
+| Linear SVM | 0.786 | 0.355 | 0.654 | 0.460 |
+
+---
+
+## 🎯 Conclusion
+The results show that resampling is essential for this dataset. Without resampling, several classifiers achieved high accuracy but poor recall, meaning that many diabetic cases were missed. Among the evaluated methods:
+- **ENN** achieved the best overall F1-score of 0.466, demonstrating the strongest precision-recall trade-off.
+- **ADASYN+ENN** achieved the highest recall of 0.833, indicating the most aggressive minority-case detection.
+
+Overall, the findings show that effective imbalance handling depends not only on class rebalancing but also on boundary refinement. For this dataset, reducing local ambiguity is more beneficial for balanced performance than merely increasing minority-class quantity.
